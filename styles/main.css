@@ -1,0 +1,20 @@
+
+
+/* Adjust the top bar buffer for smaller screens */
+.main-topbar-buffer {
+  margin-top: 70px;
+}
+
+/* Allows the grid item to grow dynamically according to its content */
+.main-grid-item {
+  padding: 10px;
+  overflow: hidden; /*  prevents content from overflowing */
+}
+
+@media (max-width: 600px) {
+  
+  /* Stack the user list and details/photos on smaller screens */
+  .Grid {
+    flex-direction: column;
+  }
+}

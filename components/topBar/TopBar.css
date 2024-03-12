@@ -1,0 +1,31 @@
+.topbar-appBar {
+  position: absolute;
+  width: 100%;
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap; 
+}
+
+.topbar .MuiTypography-root {
+  flex: 1 1 100%;
+  text-align: center;
+  padding: 5px 0;
+}
+
+.topbar-version {
+  flex: 0 1 auto;
+}
+
+@media (min-width: 600px) {
+  .topbar .MuiTypography-root {
+    flex: 0 1 auto; 
+    text-align: left; 
+  }
+
+  .topbar-version {
+    text-align: right;
+  }
+}
