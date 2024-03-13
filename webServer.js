@@ -51,6 +51,13 @@ mongoose.set("strictQuery", false);
 mongoose.connect("mongodb://root:example@127.0.0.1:27017/project6?authSource=admin", {
   useNewUrlParser: true,
   useUnifiedTopology: true,
+}).then(() => console.log('MongoDB connected...'))
+.catch(err => console.error(err));
+
+const db= mongoose.connection;
+db.on('error', console.error.bind(console, 'MongoDB connection error:'));
+db.once('open', function() {
+  console.log("We're connected to the database!");
 });
 
 // We have the express static module
@@ -142,37 +149,123 @@ app.get("/test/:p1", function (request, response) {
 /**
  * URL /user/list - Returns all the User objects.
  */
+// app.get("/user/list", function (request, response) {
+//   response.status(200).send(models.userListModel());
+// });
 app.get("/user/list", function (request, response) {
-  response.status(200).send(models.userListModel());
+  User.find({}, function (err, users) {
+    if (err) {
+      console.error("Error fetching users:", err);
+      response.status(500).send("Internal Server Error");
+      return;
+    }
+    response.status(200).json(users);
+  });
 });
+
 
 /**
  * URL /user/:id - Returns the information for User (id).
  */
+// app.get("/user/:id", function (request, response) {
+//   const id = request.params.id;
+//   const user = models.userModel(id);
+//   if (user === null) {
+//     console.log("User with _id:" + id + " not found.");
+//     response.status(400).send("Not found");
+//     return;
+//   }
+//   response.status(200).send(user);
+// });
 app.get("/user/:id", function (request, response) {
-  const id = request.params.id;
-  const user = models.userModel(id);
-  if (user === null) {
-    console.log("User with _id:" + id + " not found.");
-    response.status(400).send("Not found");
-    return;
-  }
-  response.status(200).send(user);
+  const userId = request.params.id;
+  User.findById(userId, function (err, user) {
+    if (err) {
+      console.error("Error fetching user:", err);
+      response.status(500).send("Internal Server Error");
+      return;
+    }
+    if (!user) {
+      console.log("User with _id:" + userId + " not found.");
+      response.status(404).send("User not found");
+      return;
+    }
+    response.status(200).json(user);
+  });
 });
 
-/**
- * URL /photosOfUser/:id - Returns the Photos for User (id).
- */
-app.get("/photosOfUser/:id", function (request, response) {
-  const id = request.params.id;
-  const photos = models.photoOfUserModel(id);
-  if (photos.length === 0) {
-    console.log("Photos for user with _id:" + id + " not found.");
-    response.status(400).send("Not found");
-    return;
+
+// /**
+//  * URL /photosOfUser/:id - Returns the Photos for User (id).
+//  */
+// app.get("/photosOfUser/:id", function (request, response) {
+//   const id = request.params.id;
+//   const photos = models.photoOfUserModel(id);
+//   if (photos.length === 0) {
+//     console.log("Photos for user with _id:" + id + " not found.");
+//     response.status(400).send("Not found");
+//     return;
+//   }
+//   response.status(200).send(photos);
+// });
+
+//This is requests mongo for fetching data
+
+app.get('/photosOfUser/:id', async function (request, response) {
+  // Begin by extracting the user ID from the URL parameters.
+  const userId = request.params.id;
+  
+  // First, verify the existence of the user associated with the provided ID.
+  const userExists = await User.findById(userId);
+  if (!userExists) {
+    // If no matching user is found, inform the requester with a 404 Not Found response.
+    return response.status(404).send("User not found");
   }
-  response.status(200).send(photos);
+
+  // Proceed to retrieve all photos uploaded by the identified user.
+  Photo.find({ user_id: userId })
+    .lean() // Optimize by converting Mongoose documents into plain JavaScript objects for more straightforward manipulation.
+    .exec(async function (err, photos) {
+      if (err) {
+        // Log and report any issues encountered during the photo retrieval process.
+        console.error("Encountered an error fetching photos:", err);
+        return response.status(500).send("Internal Server Error");
+      }
+      
+      if (photos.length === 0) {
+        // Notify the requester if the specified user has no associated photos.
+        return response.status(404).send("Photos not found");
+      }
+
+      try {
+        // Iterate through each photo to enhance comment details.
+        for (let photo of photos) {
+          if (photo.comments) {
+            for (let comment of photo.comments) {
+              // Fetch and append commenter details for each comment, replacing generic user IDs with specific user information.
+              const commentingUser = await User.findById(comment.user_id);
+              if (commentingUser) {
+                // Update the comment structure to include the commenter's full details.
+                comment.user = commentingUser;
+              }
+              // Remove the user_id field from comments to streamline the response and focus on relevant details.
+              delete comment.user_id;
+            }
+          }
+        }
+
+        // After processing, return the enriched set of photos and comments.
+        response.status(200).json(photos);
+      } catch (error) {
+        // Should processing fail, log the error and provide an appropriate server response.
+        console.error("A processing error occurred with photos:", error);
+        response.status(500).send("Internal Server Error");
+      }
+    });
 });
+
+
+
 
 const server = app.listen(3000, function () {
   const port = server.address().port;
