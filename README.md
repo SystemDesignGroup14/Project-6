@@ -87,9 +87,27 @@ In this problem, we need to convert the web server of our photo sharing applicat
 
 ### Notes
 
-- The MongoDB system returns models from objects stored in the database, while the request should return the data models needed by the Photo App views. Special care must be taken to align these models properly.
+- The MongoDB system returns models from objects stored in the database, while the request should return the data models needed by the Photo App views. Special care must be taken to 
+  align these models properly.
 - Utilize processing techniques to assemble the necessary model data for the front end.
 - Avoid directly modifying Mongoose models to match front end requirements. Instead, create copies of the Mongoose model objects.
 
+## Problem 2: Convert your app to use axios
 
+### Description
+
+In this problem, we need to convert our photo app to use axios for fetching data from the web server instead of the FetchModel routine. Axios is a faster and more functional alternative for making HTTP requests.
+
+### Requirements
+
+1. Replace all instances of FetchModel with axios.get in the photo app.
+2. Ensure that the app's functionality remains unchanged before and after the switch to axios.
+3. Import axios appropriately in components where data fetching is performed.
+4. Attach success and failure handlers using .then and .catch respectively.
+5. Handle both success and error cases for requests.
+
+### Notes
+
+- Axios offers enhanced functionality and performance compared to FetchModel, making it a suitable choice for future development.
+- Carefully transition each data-fetching component to use axios while ensuring that the app's behavior remains consistent.
 
